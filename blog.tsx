@@ -22,14 +22,14 @@ import {
   join,
   relative,
   removeMarkdown,
-  serve,
   serveDir,
   UnoCSS,
   walk,
+  type WalkEntry,
 } from "./deps.ts";
-import { pooledMap } from "https://deno.land/std@0.187.0/async/pool.ts";
+import { pooledMap } from "jsr:@std/async";
 import { Index, PostPage } from "./components.tsx";
-import type { ConnInfo, FeedItem } from "./deps.ts";
+import type { FeedItem } from "./deps.ts";
 import type {
   BlogContext,
   BlogMiddleware,
@@ -37,7 +37,6 @@ import type {
   BlogState,
   Post,
 } from "./types.d.ts";
-import { WalkEntry } from "https://deno.land/std@0.176.0/fs/walk.ts";
 
 export { Fragment, h };
 
@@ -82,9 +81,8 @@ function hmrSocket(callback) {
 `;
 
 function errorHandler(err: unknown) {
-  return new Response(`Internal server error: ${(err as Error)?.message}`, {
-    status: 500,
-  });
+  console.error(err);
+  return new Response("Internal server error", { status: 500 });
 }
 
 /** The main function of the library.
@@ -110,9 +108,10 @@ export default async function blog(settings?: BlogSettings) {
   const blogState = await configureBlog(url, IS_DEV, settings);
 
   const blogHandler = createBlogHandler(blogState);
-  serve(blogHandler, {
+  Deno.serve({
+    handler: blogHandler as Deno.ServeHandler,
     port: blogState.port,
-    hostname: blogState.hostname,
+    hostname: blogState.hostname ?? "0.0.0.0",
     onError: errorHandler,
   });
 }
@@ -120,7 +119,7 @@ export default async function blog(settings?: BlogSettings) {
 export function createBlogHandler(state: BlogState) {
   const inner = handler;
   const withMiddlewares = composeMiddlewares(state);
-  return function handler(req: Request, connInfo: ConnInfo) {
+  return function handler(req: Request, info: Deno.ServeHandlerInfo) {
     // Redirect requests that end with a trailing slash
     // to their non-trailing slash counterpart.
     // Ex: /about/ -> /about
@@ -129,14 +128,14 @@ export function createBlogHandler(state: BlogState) {
       url.pathname = url.pathname.slice(0, -1);
       return Response.redirect(url.href, 307);
     }
-    return withMiddlewares(req, connInfo, inner);
+    return withMiddlewares(req, info, inner);
   };
 }
 
 function composeMiddlewares(state: BlogState) {
   return (
     req: Request,
-    connInfo: ConnInfo,
+    info: Deno.ServeHandlerInfo,
     inner: (req: Request, ctx: BlogContext) => Promise<Response>,
   ) => {
     const mws = state.middlewares?.slice().reverse();
@@ -148,7 +147,7 @@ function composeMiddlewares(state: BlogState) {
         const handler = handlers.shift()!;
         return Promise.resolve(handler());
       },
-      connInfo,
+      connInfo: info,
       state,
     };
 
@@ -232,7 +231,7 @@ async function watchForChanges(postsDirectory: string) {
               socket.send("refresh");
             });
           } catch (err) {
-            console.error(`loadPost ${path} error:`, err.message);
+            console.error(`loadPost ${path} error:`, (err as Error).message);
           }
         }
       }
@@ -436,7 +435,7 @@ export async function handler(
   } catch (e) {
     if (!(e instanceof Deno.errors.NotFound)) {
       console.error(e);
-      return new Response(e.message, { status: 500 });
+      return new Response("Internal server error", { status: 500 });
     }
   }
 
@@ -512,12 +511,12 @@ export function ga(gaKey: string): BlogMiddleware {
       res = await ctx.next() as Response;
     } catch (e) {
       err = e as Error;
-      res = new Response(`Internal server error: ${err.message}`, {
-        status: 500,
-      });
+      console.error(e);
+      res = new Response("Internal server error", { status: 500 });
     } finally {
       if (gaReporter) {
-        gaReporter(request, ctx.connInfo, res!, start, err);
+        // g_a expects the old ConnInfo shape; remoteAddr is compatible at runtime
+        gaReporter(request, ctx.connInfo as unknown as Parameters<typeof gaReporter>[1], res!, start, err);
       }
     }
     return res;
@@ -536,10 +535,12 @@ export function redirects(redirectMap: Record<string, string>): BlogMiddleware {
     }
 
     if (maybeRedirect) {
-      if (
-        !maybeRedirect.startsWith("/") && !(maybeRedirect.startsWith("http"))
-      ) {
+      if (!maybeRedirect.startsWith("/") && !maybeRedirect.startsWith("http")) {
         maybeRedirect = "/" + maybeRedirect;
+      }
+      // Block protocol-relative URLs (e.g. //evil.com) which bypass the check above
+      if (maybeRedirect.startsWith("//")) {
+        maybeRedirect = "/" + maybeRedirect.replace(/^\/+/, "");
       }
 
       return new Response(null, {
@@ -553,9 +554,7 @@ export function redirects(redirectMap: Record<string, string>): BlogMiddleware {
       return await ctx.next();
     } catch (e) {
       console.error(e);
-      return new Response(`Internal server error: ${e.message}`, {
-        status: 500,
-      });
+      return new Response("Internal server error", { status: 500 });
     }
   };
 }
