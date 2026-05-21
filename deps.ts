@@ -29,7 +29,7 @@ export { Feed, type Item as FeedItem } from "npm:feed@4.2.2";
 export { default as removeMarkdown } from "npm:remove-markdown";
 
 // Add syntax highlighting support for C by default
-import "npm:prismjs/components/prism-c";
+import "npm:prismjs/components/prism-c.js";
 
 export { ColorScheme, UnoCSS };
 export type UnoConfig = typeof UnoCSS extends (
