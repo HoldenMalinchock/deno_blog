@@ -27,7 +27,7 @@ import {
   walk,
   type WalkEntry,
 } from "./deps.ts";
-import { pooledMap } from "jsr:@std/async";
+import { pooledMap } from "jsr:@std/async@^1.5.0";
 import { Index, PostPage } from "./components.tsx";
 import type { FeedItem } from "./deps.ts";
 import type {

@@ -5,8 +5,8 @@ import {
   assert,
   assertEquals,
   assertStringIncludes,
-} from "https://deno.land/std@0.193.0/testing/asserts.ts";
-import { fromFileUrl, join } from "https://deno.land/std@0.193.0/path/mod.ts";
+} from "jsr:@std/assert@^1.0.19";
+import { fromFileUrl, join } from "jsr:@std/path@^1.1.6";
 
 const BLOG_URL = new URL("./testdata/main.js", import.meta.url).href;
 const TESTDATA_PATH = fromFileUrl(new URL("./testdata/", import.meta.url));
@@ -25,12 +25,8 @@ const BLOG_SETTINGS = await configureBlog(BLOG_URL, false, {
   ],
   readtime: true,
 });
-const CONN_INFO = {
-  localAddr: {
-    transport: "tcp" as const,
-    hostname: "0.0.0.0",
-    port: 8000,
-  },
+const CONN_INFO: Deno.ServeHandlerInfo = {
+  completed: Promise.resolve(),
   remoteAddr: {
     transport: "tcp" as const,
     hostname: "0.0.0.0",
