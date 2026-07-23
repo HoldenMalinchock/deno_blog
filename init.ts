@@ -1,6 +1,6 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
-import { join, resolve } from "https://deno.land/std@0.193.0/path/mod.ts";
+import { join, resolve } from "jsr:@std/path@^1.1.6";
 
 const HELP = `deno_blog
 
@@ -58,14 +58,24 @@ blog({
 });
 `;
 
-const DENO_JSONC_NAME = "deno.jsonc";
-const DENO_JSONC_CONTENTS = `{
+// Pin to this fork until the package is published to JSR.
+// Relative import map entry lets local development override via deno.json.
+const BLOG_PACKAGE =
+  "https://raw.githubusercontent.com/HoldenMalinchock/deno_blog/main/blog.tsx";
+
+const DENO_JSON_NAME = "deno.json";
+const DENO_JSON_CONTENTS = `{
   "tasks": {
     "dev": "deno run --allow-net --allow-read --allow-env --watch main.tsx --dev",
-    "serve": "deno run --allow-net --allow-read --allow-env --no-check main.tsx"
+    "serve": "deno run --allow-net --allow-read --allow-env main.tsx"
   },
   "imports": {
-    "blog": "https://deno.land/x/blog@0.7.0/blog.tsx"
+    "blog": "${BLOG_PACKAGE}"
+  },
+  "compilerOptions": {
+    "jsx": "react",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment"
   }
 }
 `;
@@ -97,8 +107,8 @@ async function init(directory: string) {
   );
   await Deno.writeTextFile(join(directory, MAIN_NAME), MAIN_CONTENTS);
   await Deno.writeTextFile(
-    join(directory, DENO_JSONC_NAME),
-    DENO_JSONC_CONTENTS,
+    join(directory, DENO_JSON_NAME),
+    DENO_JSON_CONTENTS,
   );
 
   console.log("Blog initialized, run `deno task dev` to get started.");

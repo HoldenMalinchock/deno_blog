@@ -4,7 +4,7 @@ Minimal boilerplate blogging. All you need is one boilerplate JavaScript file
 that has 2 lines of code:
 
 ```js
-import blog from "https://deno.land/x/blog/blog.tsx";
+import blog from "blog";
 
 blog();
 ```
@@ -14,7 +14,7 @@ blog();
 To initialize your own blog you can run following script:
 
 ```shellsession
-$ deno run -r --allow-read --allow-write https://deno.land/x/blog/init.ts ./directory/for/blog/
+$ deno run -A --reload https://raw.githubusercontent.com/HoldenMalinchock/deno_blog/main/init.ts ./directory/for/blog/
 ```
 
 _This command will setup a blog with a "Hello world" post so you can start
@@ -27,7 +27,7 @@ $ deno task dev
 ```
 
 To ensure the best development experience, make sure to follow
-[Set up your environment](https://deno.land/manual/getting_started/setup_your_environment)
+[Set up your environment](https://docs.deno.com/runtime/getting_started/setup_your_environment/)
 from the Deno Manual.
 
 ## Configuration
@@ -35,7 +35,7 @@ from the Deno Manual.
 You can customize your blog as follows:
 
 ```js
-import blog, { ga, redirects } from "https://deno.land/x/blog/blog.tsx";
+import blog, { ga, redirects } from "blog";
 import { unocss_opts } from "./unocss.ts";
 
 blog({
@@ -76,7 +76,7 @@ settings. You can customize them as follows:
 ```jsx
 /** @jsx h */
 
-import blog, { h } from "https://deno.land/x/blog/blog.tsx";
+import blog, { h } from "blog";
 
 blog({
   title: "My Blog",
@@ -98,8 +98,8 @@ To deploy the project to the live internet, you can use
 
 1. Push your project to GitHub.
 2. [Create a Deno Deploy project](https://dash.deno.com/new).
-3. [Link](https://deno.com/deploy/docs/projects#enabling) the Deno Deploy
-   project to the `main.tsx` file in the root of the created repository.
+3. Link the Deno Deploy project to the repository and use the `serve` task
+   (`deno task serve`).
 4. The project will be deployed to a public `$project.deno.dev` subdomain.
 
 ## Self hosting
