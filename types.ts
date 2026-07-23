@@ -1,19 +1,32 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
+/**
+ * Shared types for `@hmalinchock/blog`.
+ *
+ * @module
+ */
+
 import type { UnoConfig, VNode } from "./deps.ts";
 
+/** Request context passed to {@linkcode BlogMiddleware}. */
 export interface BlogContext {
+  /** Current blog state (settings + content directory). */
   state: BlogState;
+  /** Deno serve connection info. */
   connInfo: Deno.ServeHandlerInfo;
+  /** Invoke the next middleware / handler in the chain. */
   next: () => Promise<Response>;
 }
 
+/** Middleware function that can intercept or wrap blog responses. */
 export interface BlogMiddleware {
   (req: Request, ctx: BlogContext): Promise<Response>;
 }
 
-type DateFormat = (date: Date) => string;
+/** Formats a {@linkcode Date} for display in the blog UI. */
+export type DateFormat = (date: Date) => string;
 
+/** User-facing configuration for {@linkcode blog}. */
 export interface BlogSettings {
   /** The blog title */
   title?: string;
@@ -40,7 +53,7 @@ export interface BlogSettings {
     /** The link target */
     target?: "_self" | "_blank" | "_parent" | "_top";
   }[];
-  /** The element ot use as header */
+  /** The element to use as header */
   header?: VNode;
   /** Whether to show the header on post pages */
   showHeaderOnPostPage?: boolean;
@@ -82,24 +95,38 @@ export interface BlogSettings {
   rootDirectory?: string;
 }
 
+/** Runtime blog state after configuration (settings + content directory). */
 export interface BlogState extends BlogSettings {
+  /** Absolute path to the blog root (contains `posts/`). */
   directory: string;
 }
 
 /** Represents a Post in the Blog. */
 export interface Post {
+  /** URL pathname for the post (e.g. `/hello-world`). */
   pathname: string;
+  /** Raw Markdown body (without front matter). */
   markdown: string;
+  /** Post title from front matter. */
   title: string;
+  /** Publish date from front matter. */
   publishDate: Date;
+  /** Optional author override for this post. */
   author?: string;
+  /** Short summary used on the index and in feeds. */
   snippet?: string;
+  /** Optional HTML cover inserted above the post body. */
   coverHtml?: string;
   /** An image URL which is used in the OpenGraph og:image tag. */
   ogImage?: string;
+  /** Optional tags from front matter. */
   tags?: string[];
+  /** Whether embedded iframes are allowed in this post. */
   allowIframes?: boolean;
+  /** Disable HTML sanitization for this post (use carefully). */
   disableHtmlSanitization?: boolean;
+  /** Estimated reading time in minutes. */
   readTime: number;
+  /** Whether math rendering is enabled for this post. */
   renderMath?: boolean;
 }

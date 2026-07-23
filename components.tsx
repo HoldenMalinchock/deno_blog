@@ -2,13 +2,9 @@
 
 /** @jsx h */
 /** @jsxFrag Fragment */
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-/// <reference lib="dom.asynciterable" />
-/// <reference lib="deno.ns" />
 
-import { gfm, h } from "./deps.ts";
-import type { BlogState, DateFormat, Post } from "./types.d.ts";
+import { Fragment, gfm, h } from "./deps.ts";
+import type { BlogState, DateFormat, Post } from "./types.ts";
 
 const socialAppIcons = new Map([
   ["github.com", IconGithub],

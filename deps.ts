@@ -11,20 +11,20 @@ export {
 export { extract as frontMatter } from "jsr:@std/front-matter@^1.0.9/any";
 
 export * as gfm from "jsr:@deno/gfm@^0.12.0";
-export { Fragment, h } from "https://deno.land/x/htm@0.1.3/mod.ts";
+export { Fragment, h } from "./vendor/htm/mod.ts";
 export {
   default as html,
   type HtmlOptions,
   type VNode,
-} from "https://deno.land/x/htm@0.1.3/html.tsx";
-import UnoCSS from "https://deno.land/x/htm@0.1.3/plugins/unocss.ts";
-import ColorScheme from "https://deno.land/x/htm@0.1.3/plugins/color-scheme.ts";
+} from "./vendor/htm/html.tsx";
+import UnoCSS from "./vendor/htm/plugins/unocss.ts";
+import ColorScheme from "./vendor/htm/plugins/color-scheme.ts";
 
 export {
   createReporter,
   type Reporter as GaReporter,
-} from "https://deno.land/x/g_a@0.1.2/mod.ts";
-export { default as callsites } from "https://raw.githubusercontent.com/kt3k/callsites/v1.0.0/mod.ts";
+} from "./vendor/g_a/mod.ts";
+export { default as callsites } from "./vendor/callsites/mod.ts";
 export { Feed, type Item as FeedItem } from "npm:feed@4.2.2";
 export { default as removeMarkdown } from "npm:remove-markdown@0.6.4";
 
@@ -32,7 +32,8 @@ export { default as removeMarkdown } from "npm:remove-markdown@0.6.4";
 import "npm:prismjs@1.29.0/components/prism-c.js";
 
 export { ColorScheme, UnoCSS };
-export type UnoConfig = typeof UnoCSS extends (
-  arg: infer P | undefined,
-) => unknown ? P
-  : never;
+
+/**
+ * Configuration object accepted by the UnoCSS HTML plugin.
+ */
+export type UnoConfig = Parameters<typeof UnoCSS>[0];

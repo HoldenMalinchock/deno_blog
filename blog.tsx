@@ -1,10 +1,24 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
+/**
+ * Minimal blogging library for Deno.
+ *
+ * Create a blog with a few lines of code, write posts in Markdown, and serve
+ * locally or on Deno Deploy.
+ *
+ * @module
+ * @example
+ * ```ts
+ * import blog from "@hmalinchock/blog";
+ *
+ * blog({
+ *   title: "My Blog",
+ *   description: "Thoughts and notes.",
+ *   author: "You",
+ * });
+ * ```
+ */
 /** @jsx h */
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-/// <reference lib="dom.asynciterable" />
-/// <reference lib="deno.ns" />
 
 import {
   callsites,
@@ -36,9 +50,25 @@ import type {
   BlogSettings,
   BlogState,
   Post,
-} from "./types.d.ts";
+} from "./types.ts";
 
-export { Fragment, h };
+/** Re-export of the JSX `Fragment` helper used for custom headers/footers. */
+export { Fragment };
+/** Re-export of the JSX `h` factory used for custom headers/footers. */
+export { h };
+
+/** Blog configuration and runtime types. */
+export type {
+  BlogContext,
+  BlogMiddleware,
+  BlogSettings,
+  BlogState,
+  DateFormat,
+  Post,
+} from "./types.ts";
+
+/** UnoCSS config type accepted by {@linkcode BlogSettings.unocss}. */
+export type { UnoConfig } from "./deps.ts";
 
 const IS_DEV = Deno.args.includes("--dev") && "watchFs" in Deno;
 const POSTS = new Map<string, Post>();
@@ -85,10 +115,17 @@ function errorHandler(err: unknown) {
   return new Response("Internal server error", { status: 500 });
 }
 
-/** The main function of the library.
+/**
+ * Start the blog HTTP server.
  *
- * ```jsx
- * import blog, { ga } from "https://deno.land/x/blog/blog.tsx";
+ * Reads Markdown posts from a `posts/` directory next to the caller, then
+ * serves the index, post pages, static assets, and an Atom feed.
+ *
+ * @param settings Optional blog configuration (title, author, theme, etc.)
+ *
+ * @example
+ * ```ts
+ * import blog, { ga, redirects } from "@hmalinchock/blog";
  *
  * blog({
  *   title: "My Blog",
@@ -96,11 +133,12 @@ function errorHandler(err: unknown) {
  *   avatar: "./avatar.png",
  *   middlewares: [
  *     ga("GA-ANALYTICS-KEY"),
+ *     redirects({ "/old": "/new-post" }),
  *   ],
  * });
  * ```
  */
-export default async function blog(settings?: BlogSettings) {
+export default async function blog(settings?: BlogSettings): Promise<void> {
   html.use(UnoCSS(settings?.unocss)); // Load custom unocss module if provided
   html.use(ColorScheme(settings?.theme == "dark" ? "dark" : "auto"));
 
@@ -116,10 +154,19 @@ export default async function blog(settings?: BlogSettings) {
   });
 }
 
-export function createBlogHandler(state: BlogState) {
+/**
+ * Create a request handler for the blog without starting a server.
+ *
+ * Useful for tests and embedding the blog inside another server.
+ *
+ * @param state Configured blog state from {@linkcode configureBlog}
+ */
+export function createBlogHandler(
+  state: BlogState,
+): (req: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response> {
   const inner = handler;
   const withMiddlewares = composeMiddlewares(state);
-  return function handler(req: Request, info: Deno.ServeHandlerInfo) {
+  return function blogRequestHandler(req: Request, info: Deno.ServeHandlerInfo) {
     // Redirect requests that end with a trailing slash
     // to their non-trailing slash counterpart.
     // Ex: /about/ -> /about
@@ -131,7 +178,6 @@ export function createBlogHandler(state: BlogState) {
     return withMiddlewares(req, info, inner);
   };
 }
-
 function composeMiddlewares(state: BlogState) {
   return (
     req: Request,
@@ -164,6 +210,13 @@ function composeMiddlewares(state: BlogState) {
   };
 }
 
+/**
+ * Load posts and build the runtime {@linkcode BlogState}.
+ *
+ * @param url File URL or path of the blog entry module (usually the caller)
+ * @param isDev When true, watches `posts/` for changes and enables HMR
+ * @param settings Optional blog settings
+ */
 export async function configureBlog(
   url: string,
   isDev: boolean,
@@ -293,10 +346,18 @@ async function loadPost(postsDirectory: string, path: string) {
   POSTS.set(pathname, post);
 }
 
+/**
+ * Core blog request handler (index, posts, feed, static files, HMR).
+ *
+ * Prefer {@linkcode createBlogHandler} unless you are composing middleware yourself.
+ *
+ * @param req Incoming request
+ * @param ctx Blog context with state and `next`
+ */
 export async function handler(
   req: Request,
   ctx: BlogContext,
-) {
+): Promise<Response> {
   const { state: blogState } = ctx;
   const { pathname, searchParams } = new URL(req.url);
   const canonicalUrl = blogState.canonicalUrl || new URL(req.url).origin;
@@ -492,6 +553,18 @@ function serveRSS(
   });
 }
 
+/**
+ * Google Analytics middleware.
+ *
+ * @param gaKey Measurement / tracking ID (must be non-empty)
+ * @returns Middleware that records page views after the response is produced
+ *
+ * @example
+ * ```ts
+ * import blog, { ga } from "@hmalinchock/blog";
+ * blog({ middlewares: [ga("G-XXXXXXXXXX")] });
+ * ```
+ */
 export function ga(gaKey: string): BlogMiddleware {
   if (gaKey.length === 0) {
     throw new Error("GA key cannot be empty.");
@@ -523,6 +596,22 @@ export function ga(gaKey: string): BlogMiddleware {
   };
 }
 
+/**
+ * Path redirect middleware.
+ *
+ * Keys may be with or without a leading slash. Values may be absolute paths
+ * or full `http(s)` URLs.
+ *
+ * @param redirectMap Map of request path → destination
+ *
+ * @example
+ * ```ts
+ * import blog, { redirects } from "@hmalinchock/blog";
+ * blog({
+ *   middlewares: [redirects({ "/old-post": "/new-post", "home": "/" })],
+ * });
+ * ```
+ */
 export function redirects(redirectMap: Record<string, string>): BlogMiddleware {
   return async function (req: Request, ctx: BlogContext): Promise<Response> {
     const { pathname } = new URL(req.url);

@@ -1,0 +1,22 @@
+{
+  "name": "@hmalinchock/blog",
+  "version": "0.8.0",
+  "exports": {
+    ".": "./blog.tsx",
+    "./init": "./init.ts"
+  },
+  "publish": {
+    "include": [
+      "blog.tsx",
+      "components.tsx",
+      "deps.ts",
+      "init.ts",
+      "types.ts",
+      "vendor/**",
+      "README.md",
+      "LICENSE",
+      "deno.json",
+      "jsr.json"
+    ]
+  }
+}
