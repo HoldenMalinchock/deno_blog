@@ -30,7 +30,7 @@ Or pin in `deno.json`:
 ```json
 {
   "imports": {
-    "@hmalinchock/blog": "jsr:@hmalinchock/blog@^0.8.0"
+    "@hmalinchock/blog": "jsr:@hmalinchock/blog@^1.0.0"
   }
 }
 ```
