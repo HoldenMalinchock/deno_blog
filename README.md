@@ -51,10 +51,10 @@ That creates:
 
 ### Tasks
 
-| Task | Description |
-|------|-------------|
-| `deno task dev` | Local server with live reload (`--watch` + `--dev`) |
-| `deno task serve` | Production-style serve (Deno Deploy friendly) |
+| Task              | Description                                         |
+| ----------------- | --------------------------------------------------- |
+| `deno task dev`   | Local server with live reload (`--watch` + `--dev`) |
+| `deno task serve` | Production-style serve (Deno Deploy friendly)       |
 
 ## Configuration
 
@@ -97,9 +97,7 @@ blog({
   title: "My Blog",
   header: <header>Your custom header</header>,
   showHeaderOnPostPage: true,
-  section: (post) => (
-    <section>Custom section for {post.title}</section>
-  ),
+  section: (post) => <section>Custom section for {post.title}</section>,
   footer: <footer>Your custom footer</footer>,
 });
 ```
@@ -137,15 +135,16 @@ deno run --allow-net --allow-read --allow-env main.tsx
 
 ## API
 
-| Export | Description |
-|--------|-------------|
-| `blog(settings?)` | Start the blog server |
-| `configureBlog(url, isDev, settings?)` | Load posts and build state |
-| `createBlogHandler(state)` | Request handler without listening |
-| `ga(key)` | Google Analytics middleware |
-| `redirects(map)` | Path redirect middleware |
-| `h` / `Fragment` | JSX helpers for custom UI |
+| Export                                 | Description                       |
+| -------------------------------------- | --------------------------------- |
+| `blog(settings?)`                      | Start the blog server             |
+| `configureBlog(url, isDev, settings?)` | Load posts and build state        |
+| `createBlogHandler(state)`             | Request handler without listening |
+| `ga(key)`                              | Google Analytics middleware       |
+| `redirects(map)`                       | Path redirect middleware          |
+| `h` / `Fragment`                       | JSX helpers for custom UI         |
 
 ## License
 
-MIT — based on the original [denoland/deno_blog](https://github.com/denoland/deno_blog) library.
+MIT — based on the original
+[denoland/deno_blog](https://github.com/denoland/deno_blog) library.

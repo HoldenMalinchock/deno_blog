@@ -1,12 +1,8 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
 import { configureBlog, createBlogHandler, redirects } from "./blog.tsx";
-import {
-  assert,
-  assertEquals,
-  assertStringIncludes,
-} from "jsr:@std/assert@^1.0.19";
-import { fromFileUrl, join } from "jsr:@std/path@^1.1.6";
+import { assert, assertEquals, assertStringIncludes } from "@std/assert";
+import { fromFileUrl, join } from "@std/path";
 
 const BLOG_URL = new URL("./testdata/main.js", import.meta.url).href;
 const TESTDATA_PATH = fromFileUrl(new URL("./testdata/", import.meta.url));

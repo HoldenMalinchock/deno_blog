@@ -408,7 +408,14 @@
       "jsr:@std/front-matter@^1.0.9",
       "jsr:@std/fs@^1.0.19",
       "jsr:@std/http@^1.0.21",
-      "jsr:@std/path@^1.1.6"
+      "jsr:@std/path@^1.1.6",
+      "npm:@unocss/core@0.46.5",
+      "npm:@unocss/preset-wind@0.46.5",
+      "npm:feed@4.2.2",
+      "npm:preact-render-to-string@6.5.13",
+      "npm:preact@10.26.4",
+      "npm:prismjs@1.29.0",
+      "npm:remove-markdown@0.6.4"
     ]
   }
 }

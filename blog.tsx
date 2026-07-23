@@ -32,7 +32,7 @@ import {
   gfm,
   h,
   html,
-  HtmlOptions,
+  type HtmlOptions,
   join,
   relative,
   removeMarkdown,
@@ -41,7 +41,7 @@ import {
   walk,
   type WalkEntry,
 } from "./deps.ts";
-import { pooledMap } from "jsr:@std/async@^1.5.0";
+import { pooledMap } from "@std/async";
 import { Index, PostPage } from "./components.tsx";
 import type { FeedItem } from "./deps.ts";
 import type {
@@ -166,7 +166,10 @@ export function createBlogHandler(
 ): (req: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response> {
   const inner = handler;
   const withMiddlewares = composeMiddlewares(state);
-  return function blogRequestHandler(req: Request, info: Deno.ServeHandlerInfo) {
+  return function blogRequestHandler(
+    req: Request,
+    info: Deno.ServeHandlerInfo,
+  ) {
     // Redirect requests that end with a trailing slash
     // to their non-trailing slash counterpart.
     // Ex: /about/ -> /about
@@ -589,7 +592,13 @@ export function ga(gaKey: string): BlogMiddleware {
     } finally {
       if (gaReporter) {
         // g_a expects the old ConnInfo shape; remoteAddr is compatible at runtime
-        gaReporter(request, ctx.connInfo as unknown as Parameters<typeof gaReporter>[1], res!, start, err);
+        gaReporter(
+          request,
+          ctx.connInfo as unknown as Parameters<typeof gaReporter>[1],
+          res!,
+          start,
+          err,
+        );
       }
     }
     return res;

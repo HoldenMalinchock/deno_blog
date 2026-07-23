@@ -10,7 +10,7 @@
  * ```
  */
 
-import { join, resolve } from "jsr:@std/path@^1.1.6";
+import { join, resolve } from "@std/path";
 
 const HELP = `deno_blog
 

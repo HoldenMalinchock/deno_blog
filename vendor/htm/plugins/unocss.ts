@@ -1,9 +1,5 @@
-import {
-  type Preset,
-  type UserConfig,
-  createGenerator,
-} from "npm:@unocss/core@0.46.5";
-import { presetWind } from "npm:@unocss/preset-wind@0.46.5";
+import { createGenerator, type Preset, type UserConfig } from "@unocss/core";
+import { presetWind } from "@unocss/preset-wind";
 import type { Plugin } from "../html.tsx";
 
 const unoResetCSS = `/* reset */

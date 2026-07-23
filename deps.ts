@@ -1,16 +1,11 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
-export { serveDir } from "jsr:@std/http@^1.0.21/file-server";
-export { walk, type WalkEntry } from "jsr:@std/fs@^1.0.19/walk";
-export {
-  dirname,
-  fromFileUrl,
-  join,
-  relative,
-} from "jsr:@std/path@^1.1.6";
-export { extract as frontMatter } from "jsr:@std/front-matter@^1.0.9/any";
+export { serveDir } from "@std/http/file-server";
+export { walk, type WalkEntry } from "@std/fs/walk";
+export { dirname, fromFileUrl, join, relative } from "@std/path";
+export { extract as frontMatter } from "@std/front-matter/any";
 
-export * as gfm from "jsr:@deno/gfm@^0.12.0";
+export * as gfm from "@deno/gfm";
 export { Fragment, h } from "./vendor/htm/mod.ts";
 export {
   default as html,
@@ -25,11 +20,11 @@ export {
   type Reporter as GaReporter,
 } from "./vendor/g_a/mod.ts";
 export { default as callsites } from "./vendor/callsites/mod.ts";
-export { Feed, type Item as FeedItem } from "npm:feed@4.2.2";
-export { default as removeMarkdown } from "npm:remove-markdown@0.6.4";
+export { Feed, type Item as FeedItem } from "feed";
+export { default as removeMarkdown } from "remove-markdown";
 
 // Add syntax highlighting support for C by default
-import "npm:prismjs@1.29.0/components/prism-c.js";
+import "prismjs/components/prism-c.js";
 
 export { ColorScheme, UnoCSS };
 

@@ -1,11 +1,7 @@
 /** @jsx h */
 
-import {
-  h,
-  isValidElement,
-  type VNode,
-} from "npm:preact@10.26.4";
-import { renderToString } from "npm:preact-render-to-string@6.5.13";
+import { h, isValidElement, type VNode } from "preact";
+import { renderToString } from "preact-render-to-string";
 
 const plugins: Plugin[] = [];
 
@@ -155,4 +151,4 @@ html.use = (...plugin: Plugin[]) => {
 
 export { h, isValidElement };
 export type { VNode };
-export { Fragment } from "npm:preact@10.26.4";
+export { Fragment } from "preact";
