@@ -1,14 +1,10 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
 /** @jsx h */
-/** @jsxFrag Fragment */
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-/// <reference lib="dom.asynciterable" />
-/// <reference lib="deno.ns" />
-
+// h is required by the classic JSX transform (jsxFactory).
+// deno-lint-ignore verbatim-module-syntax
 import { gfm, h } from "./deps.ts";
-import type { BlogState, DateFormat, Post } from "./types.d.ts";
+import type { BlogState, DateFormat, Post } from "./types.ts";
 
 const socialAppIcons = new Map([
   ["github.com", IconGithub],
@@ -139,7 +135,7 @@ function PostCard(
       </h3>
       <Tags tags={post.tags} />
       <p class="text-gray-500/80">
-        {post.author && <span>{post.author} {" "}</span>}
+        {post.author && <span>{`${post.author} `}</span>}
         <PrettyDate
           date={post.publishDate}
           dateFormat={dateFormat}
@@ -259,9 +255,7 @@ function Footer(_props: { author?: string }) {
 
 function Tooltip({ children }: { children: string }) {
   return (
-    <div
-      className={"absolute top-10 px-3 h-8 !leading-8 bg-black/80 text-white text-sm rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity"}
-    >
+    <div className="absolute top-10 px-3 h-8 !leading-8 bg-black/80 text-white text-sm rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
       <span
         className="block absolute text-black/80"
         style={{ top: -4, left: "50%", marginLeft: -4.5, width: 9, height: 4 }}

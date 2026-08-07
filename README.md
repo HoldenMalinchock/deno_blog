@@ -1,42 +1,65 @@
-# Blog
+# @hmalinchock/blog
 
-Minimal boilerplate blogging. All you need is one boilerplate JavaScript file
-that has 2 lines of code:
+[![JSR](https://jsr.io/badges/@hmalinchock/blog)](https://jsr.io/@hmalinchock/blog)
+[![JSR Score](https://jsr.io/badges/@hmalinchock/blog/score)](https://jsr.io/@hmalinchock/blog/score)
 
-```js
-import blog from "blog";
+Minimal boilerplate blogging for **Deno 2** and **Deno Deploy**.
 
-blog();
+All you need is a small entry file:
+
+```ts
+import blog from "@hmalinchock/blog";
+
+blog({
+  title: "My Blog",
+  description: "Thoughts and notes.",
+  author: "You",
+});
 ```
 
-## Getting started
+Write posts as Markdown in a `posts/` directory next to that file.
 
-To initialize your own blog you can run following script:
+## Install
 
-```shellsession
-$ deno run -A --reload https://raw.githubusercontent.com/HoldenMalinchock/deno_blog/main/init.ts ./directory/for/blog/
+```sh
+deno add jsr:@hmalinchock/blog
 ```
 
-_This command will setup a blog with a "Hello world" post so you can start
-writing right away._
+Or pin in `deno.json`:
 
-Start local server with live reload:
-
-```shellsession
-$ deno task dev
+```json
+{
+  "imports": {
+    "@hmalinchock/blog": "jsr:@hmalinchock/blog@^1.0.0"
+  }
+}
 ```
 
-To ensure the best development experience, make sure to follow
-[Set up your environment](https://docs.deno.com/runtime/getting_started/setup_your_environment/)
-from the Deno Manual.
+## Getting started (scaffold)
+
+```sh
+deno run -A jsr:@hmalinchock/blog/init ./my_blog
+cd my_blog
+deno task dev
+```
+
+That creates:
+
+- `main.tsx` — blog entrypoint
+- `deno.json` — tasks + import map
+- `posts/hello_world.md` — first post
+
+### Tasks
+
+| Task              | Description                                         |
+| ----------------- | --------------------------------------------------- |
+| `deno task dev`   | Local server with live reload (`--watch` + `--dev`) |
+| `deno task serve` | Production-style serve (Deno Deploy friendly)       |
 
 ## Configuration
 
-You can customize your blog as follows:
-
-```js
-import blog, { ga, redirects } from "blog";
-import { unocss_opts } from "./unocss.ts";
+```ts
+import blog, { ga, redirects } from "@hmalinchock/blog";
 
 blog({
   author: "Dino",
@@ -47,65 +70,81 @@ blog({
   links: [
     { title: "Email", url: "mailto:bot@deno.com" },
     { title: "GitHub", url: "https://github.com/denobot" },
-    { title: "Twitter", url: "https://twitter.com/denobot" },
   ],
   lang: "en",
-  // localised format based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat
   dateFormat: (date) =>
     new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(date),
   middlewares: [
-    ga("UA-XXXXXXXX-X"),
+    ga("G-XXXXXXXXXX"),
     redirects({
       "/foo": "/my_post",
-      // you can skip leading slashes too
-      "bar": "my_post2",
+      bar: "my_post2",
     }),
   ],
-  unocss: unocss_opts, // check https://github.com/unocss/unocss
   favicon: "favicon.ico",
 });
 ```
 
-![Preview](./.github/preview.png)
+## Custom header / footer
 
-## Customize the header and footer
+Use a `.tsx` entry file:
 
-By default, we render the header and footer with builtin template using the blog
-settings. You can customize them as follows:
-
-```jsx
+```tsx
 /** @jsx h */
-
-import blog, { h } from "blog";
+import blog, { h } from "@hmalinchock/blog";
 
 blog({
   title: "My Blog",
   header: <header>Your custom header</header>,
-  showHeaderOnPostPage: true, // by default, the header will only show on home, set showHeaderOnPostPage to true to make it show on each post page
-  section: (post) => (
-    <section>Your custom section with access to Post props.</section>
-  ),
+  showHeaderOnPostPage: true,
+  section: (post) => <section>Custom section for {post.title}</section>,
   footer: <footer>Your custom footer</footer>,
 });
 ```
 
-Beware to use `.tsx` extension to this extent.
+## Post front matter
+
+```md
+---
+title: Hello world!
+publish_date: 2026-07-22
+author: You
+snippet: Optional summary for the index and feed.
+tags:
+  - deno
+  - blog
+---
+
+Markdown body goes here.
+```
 
 ## Hosting with Deno Deploy
 
-To deploy the project to the live internet, you can use
-[Deno Deploy](https://deno.com/deploy):
-
 1. Push your project to GitHub.
-2. [Create a Deno Deploy project](https://dash.deno.com/new).
-3. Link the Deno Deploy project to the repository and use the `serve` task
-   (`deno task serve`).
-4. The project will be deployed to a public `$project.deno.dev` subdomain.
+2. Create a Deno Deploy project and link the repo.
+3. Use the **`serve`** task (`deno task serve`).
+4. Deploy to a public `$project.deno.dev` subdomain.
 
-## Self hosting
+## Permissions
 
-You can also self-host the blog, in such case run:
+Typical run permissions:
 
-```shellsession
-$ deno task serve
+```sh
+deno run --allow-net --allow-read --allow-env main.tsx
 ```
+
+## API
+
+| Export                                 | Description                       |
+| -------------------------------------- | --------------------------------- |
+| `blog(settings?)`                      | Start the blog server             |
+| `configureBlog(url, isDev, settings?)` | Load posts and build state        |
+| `createBlogHandler(state)`             | Request handler without listening |
+| `ga(key)`                              | Google Analytics middleware       |
+| `redirects(map)`                       | Path redirect middleware          |
+| `h` / `Fragment`                       | JSX helpers for custom UI         |
+
+## License
+
+MIT — based on the original
+[denoland/deno_blog](https://github.com/denoland/deno_blog) library.

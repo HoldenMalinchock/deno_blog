@@ -1,6 +1,16 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
-import { join, resolve } from "jsr:@std/path@^1.1.6";
+/**
+ * CLI to scaffold a new blog project.
+ *
+ * @module
+ * @example
+ * ```sh
+ * deno run -A jsr:@hmalinchock/blog/init ./my_blog
+ * ```
+ */
+
+import { join, resolve } from "@std/path";
 
 const HELP = `deno_blog
 
@@ -8,13 +18,13 @@ Initialize a new blog project. This will create all the necessary files for
 a new blog.
 
 To generate a blog in the './my_blog' subdirectory:
-  deno run ${import.meta.url} ./my_blog
+  deno run -A jsr:@hmalinchock/blog/init ./my_blog
 
 To generate a blog in the current directory:
-  deno run ${import.meta.url} .
+  deno run -A jsr:@hmalinchock/blog/init .
 
 Print this message:
-  deno run ${import.meta.url} --help
+  deno run -A jsr:@hmalinchock/blog/init --help
 `;
 
 const CURRENT_DATE = new Date();
@@ -31,13 +41,13 @@ This is my first blog post!
 const MAIN_NAME = "main.tsx";
 const MAIN_CONTENTS = `/** @jsx h */
 
-import blog, { ga, redirects, h } from "blog";
+import blog, { ga, redirects, h } from "@hmalinchock/blog";
 
 blog({
   title: "My Blog",
   description: "This is my new blog.",
   // header: <header>Your custom header</header>,
-  // section: (post: Post) => <section>Your custom section with access to Post props.</section>,
+  // section: (post) => <section>Your custom section with access to Post props.</section>,
   // footer: <footer>Your custom footer</footer>,
   avatar: "https://deno-avatar.deno.dev/avatar/blog.svg",
   avatarClass: "rounded-full",
@@ -58,11 +68,6 @@ blog({
 });
 `;
 
-// Pin to this fork until the package is published to JSR.
-// Relative import map entry lets local development override via deno.json.
-const BLOG_PACKAGE =
-  "https://raw.githubusercontent.com/HoldenMalinchock/deno_blog/main/blog.tsx";
-
 const DENO_JSON_NAME = "deno.json";
 const DENO_JSON_CONTENTS = `{
   "tasks": {
@@ -70,7 +75,7 @@ const DENO_JSON_CONTENTS = `{
     "serve": "deno run --allow-net --allow-read --allow-env main.tsx"
   },
   "imports": {
-    "blog": "${BLOG_PACKAGE}"
+    "@hmalinchock/blog": "jsr:@hmalinchock/blog@^1.0.0"
   },
   "compilerOptions": {
     "jsx": "react",
@@ -80,7 +85,14 @@ const DENO_JSON_CONTENTS = `{
 }
 `;
 
-async function init(directory: string) {
+/**
+ * Create a new blog project in `directory`.
+ *
+ * Writes `main.tsx`, `deno.json`, and a starter post under `posts/`.
+ *
+ * @param directory Target directory (created if missing)
+ */
+export async function init(directory: string): Promise<void> {
   directory = resolve(directory);
 
   console.log(`Initializing blog in ${directory}...`);
@@ -130,6 +142,4 @@ if (import.meta.main) {
   }
 
   await init(directory);
-} else {
-  throw new Error("This module is meant to be executed as a CLI.");
 }

@@ -1,12 +1,8 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
 import { configureBlog, createBlogHandler, redirects } from "./blog.tsx";
-import {
-  assert,
-  assertEquals,
-  assertStringIncludes,
-} from "jsr:@std/assert@^1.0.19";
-import { fromFileUrl, join } from "jsr:@std/path@^1.1.6";
+import { assert, assertEquals, assertStringIncludes } from "@std/assert";
+import { fromFileUrl, join } from "@std/path";
 
 const BLOG_URL = new URL("./testdata/main.js", import.meta.url).href;
 const TESTDATA_PATH = fromFileUrl(new URL("./testdata/", import.meta.url));
@@ -48,7 +44,7 @@ Deno.test("index page", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/"/>`,
   );
   assertStringIncludes(body, `Test blog`);
   assertStringIncludes(body, `This is some description.`);
@@ -65,11 +61,11 @@ Deno.test("posts/ first", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/first" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/first"/>`,
   );
   assertStringIncludes(body, `First post`);
   assertStringIncludes(body, `The author`);
-  assertStringIncludes(body, `<time dateTime="2022-03-20T00:00:00.000Z">`);
+  assertStringIncludes(body, `<time datetime="2022-03-20T00:00:00.000Z">`);
   assertStringIncludes(body, `<img src="first/hello.png" />`);
   assertStringIncludes(body, `<p>Lorem Ipsum is simply dummy text`);
   assertStringIncludes(body, `$100, $200, $300, $400, $500`);
@@ -86,7 +82,7 @@ Deno.test("posts/ first (check canonical with params)", async () => {
   const body = await resp.text();
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/first" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/first"/>`,
   );
 });
 
@@ -99,11 +95,11 @@ Deno.test("posts/ second", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/second" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/second"/>`,
   );
   assertStringIncludes(body, `Second post`);
   assertStringIncludes(body, `CUSTOM AUTHOR NAME`);
-  assertStringIncludes(body, `<time dateTime="2022-05-02T00:00:00.000Z">`);
+  assertStringIncludes(body, `<time datetime="2022-05-02T00:00:00.000Z">`);
   assertStringIncludes(body, `<img src="second/hello2.png" />`);
   assertStringIncludes(body, `<p>Lorem Ipsum is simply dummy text`);
 });
@@ -117,11 +113,11 @@ Deno.test("posts/ third", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/third" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/third"/>`,
   );
   assertStringIncludes(body, `Third post`);
   assertStringIncludes(body, `CUSTOM AUTHOR NAME`);
-  assertStringIncludes(body, `<time dateTime="2022-08-19T00:00:00.000Z">`);
+  assertStringIncludes(body, `<time datetime="2022-08-19T00:00:00.000Z">`);
   assertStringIncludes(body, `<iframe width="560" height="315"`);
   assertStringIncludes(body, `<p>Lorem Ipsum is simply dummy text`);
 });
@@ -135,12 +131,12 @@ Deno.test("posts/ fourth", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/fourth" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/fourth"/>`,
   );
   assertStringIncludes(body, `Fourth post`);
   assertStringIncludes(
     body,
-    `<time dateTime="2023-01-30T00:00:00.000Z">`,
+    `<time datetime="2023-01-30T00:00:00.000Z">`,
   );
   assertStringIncludes(
     body,
@@ -159,10 +155,10 @@ Deno.test("posts/ seventh", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/uses-pathname" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/uses-pathname"/>`,
   );
   assertStringIncludes(body, `seventh post`);
-  assertStringIncludes(body, `<time dateTime="2022-05-02T00:00:00.000Z">`);
+  assertStringIncludes(body, `<time datetime="2022-05-02T00:00:00.000Z">`);
   assertStringIncludes(body, `<p>Lorem Ipsum is simply dummy text`);
 });
 
@@ -175,7 +171,7 @@ Deno.test("posts/ 中文", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/%E4%B8%AD%E6%96%87" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/%E4%B8%AD%E6%96%87"/>`,
   );
   assertStringIncludes(body, `中文`);
   assertStringIncludes(body, `<p>你好，世界！`);
@@ -198,10 +194,10 @@ Deno.test("posts/ sixth", async () => {
   assertStringIncludes(body, `<html lang="en-GB">`);
   assertStringIncludes(
     body,
-    `<link rel="canonical" href="https://blog.deno.dev/sixth" />`,
+    `<link rel="canonical" href="https://blog.deno.dev/sixth"/>`,
   );
   assertStringIncludes(body, `Sixth post`);
-  assertStringIncludes(body, `<time dateTime="2023-08-17T00:00:00.000Z">`);
+  assertStringIncludes(body, `<time datetime="2023-08-17T00:00:00.000Z">`);
   assertStringIncludes(body, `Tags make it easier for readers`);
 });
 
@@ -322,7 +318,7 @@ Deno.test(
       new Request("https://blog.deno.dev"),
     );
     const body = await resp.text();
-    assertStringIncludes(body, `<meta name="theme-color" content="#000" />`);
+    assertStringIncludes(body, `<meta name="theme-color" content="#000"/>`);
   },
 );
 
@@ -341,7 +337,7 @@ Deno.test(
       new Request("https://blog.deno.dev/first"),
     );
     const body = await resp.text();
-    assertStringIncludes(body, `<meta name="theme-color" content="#000" />`);
+    assertStringIncludes(body, `<meta name="theme-color" content="#000"/>`);
   },
 );
 

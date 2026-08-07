@@ -1,27 +1,60 @@
 {
+  "name": "@hmalinchock/blog",
+  "version": "1.0.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./blog.tsx",
+    "./init": "./init.ts"
+  },
+  "publish": {
+    "include": [
+      "blog.tsx",
+      "components.tsx",
+      "deps.ts",
+      "init.ts",
+      "types.ts",
+      "vendor/**",
+      "README.md",
+      "LICENSE",
+      "deno.json",
+      "jsr.json"
+    ]
+  },
   "tasks": {
     "demo": "deno run --allow-net --allow-read --allow-env --watch testdata/my_blog.ts --dev",
     "dev": "deno run --allow-net --allow-read --allow-env --watch testdata/my_blog.ts --dev",
     "test": "deno test --allow-read --allow-env --allow-net",
-    "serve": "deno run --allow-net --allow-read --allow-env testdata/my_blog.ts"
+    "serve": "deno run --allow-net --allow-read --allow-env testdata/my_blog.ts",
+    "check": "deno check blog.tsx init.ts",
+    "doc": "deno doc --lint blog.tsx init.ts",
+    "publish:dry": "deno publish --dry-run"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.19",
     "@std/async": "jsr:@std/async@^1.5.0",
     "@std/front-matter": "jsr:@std/front-matter@^1.0.9",
+    "@std/front-matter/any": "jsr:@std/front-matter@^1.0.9/any",
     "@std/fs": "jsr:@std/fs@^1.0.19",
+    "@std/fs/walk": "jsr:@std/fs@^1.0.19/walk",
     "@std/http": "jsr:@std/http@^1.0.21",
+    "@std/http/file-server": "jsr:@std/http@^1.0.21/file-server",
     "@std/path": "jsr:@std/path@^1.1.6",
-    "@deno/gfm": "jsr:@deno/gfm@^0.12.0"
-  },
-  "exports": {
-    ".": "./blog.tsx",
-    "./init": "./init.ts"
+    "@deno/gfm": "jsr:@deno/gfm@^0.12.0",
+    "@unocss/core": "npm:@unocss/core@0.46.5",
+    "@unocss/preset-wind": "npm:@unocss/preset-wind@0.46.5",
+    "preact": "npm:preact@10.26.4",
+    "preact-render-to-string": "npm:preact-render-to-string@6.5.13",
+    "feed": "npm:feed@4.2.2",
+    "remove-markdown": "npm:remove-markdown@0.6.4",
+    "prismjs/components/prism-c.js": "npm:prismjs@1.29.0/components/prism-c.js"
   },
   "compilerOptions": {
     "jsx": "react",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
     "lib": ["deno.window", "deno.unstable", "dom", "dom.iterable"]
+  },
+  "lint": {
+    "exclude": ["testdata/"]
   }
 }
