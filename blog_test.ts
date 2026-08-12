@@ -357,6 +357,23 @@ Deno.test("Plaintext response", async () => {
   assert(body.startsWith("It was popularised in the 1960s"));
 });
 
+Deno.test("missing post is 404", async () => {
+  const resp = await testHandler(
+    new Request("https://blog.deno.dev/does-not-exist"),
+  );
+  assertEquals(resp.status, 404);
+  await resp.text();
+});
+
+Deno.test("posts/ fifth (math)", async () => {
+  const resp = await testHandler(new Request("https://blog.deno.dev/fifth"));
+  assertEquals(resp.status, 200);
+  const body = await resp.text();
+  assertStringIncludes(body, `Fifth post`);
+  assertStringIncludes(body, `katex`);
+  assertStringIncludes(body, `class="katex"`);
+});
+
 Deno.test(
   "custom root directory",
   async () => {
