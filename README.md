@@ -5,7 +5,8 @@
 
 Minimal boilerplate blogging for **Deno 2** and **Deno Deploy**.
 
-All you need is a small entry file:
+Write Markdown in a `posts/` folder, add a few lines of TypeScript, and you have
+a site:
 
 ```ts
 import blog from "@hmalinchock/blog";
@@ -17,15 +18,35 @@ blog({
 });
 ```
 
-Write posts as Markdown in a `posts/` directory next to that file.
+## Why this fork
+
+[denoland/deno_blog](https://github.com/denoland/deno_blog) was one of the first
+public demos of what Deno could do — a tiny library, from the people who built
+the runtime, that turned a folder of Markdown into a real site on Deno Deploy.
+It showed the pitch: no `node_modules` ritual, TypeScript that just ran, and
+hosting that felt like saving a file.
+
+The upstream repo has been quiet for a long time. I still use this library for
+my own writing, and I did not want it stranded on Deno 1, `deno.land/x`, and
+Universal Analytics. This fork is that library brought back to life:
+
+- Deno 2 (`Deno.serve`, JSR / npm specifiers, current `@std`)
+- Meant to publish as **`jsr:@hmalinchock/blog`**
+- Same idea as the original: one entry file, a `posts/` directory, done
+
+It remains MIT-licensed and is still based on the Deno authors' code. I am not
+replacing that history — I am keeping a tool I rely on able to run on the Deno
+that exists now.
 
 ## Install
+
+### After this package is on JSR
 
 ```sh
 deno add jsr:@hmalinchock/blog
 ```
 
-Or pin in `deno.json`:
+Or pin it in `deno.json`:
 
 ```json
 {
@@ -35,12 +56,41 @@ Or pin in `deno.json`:
 }
 ```
 
+The `jsr:@hmalinchock/blog` package is the intended install. It is **not on JSR
+yet** — first publish is still pending. Until that lands, use a local clone
+(below) rather than a raw GitHub URL. This library uses bare import-map
+specifiers (`@std/…`, `preact`, …), so a lone `file:` / raw URL will not resolve
+unless the consumer also has those mappings.
+
+### From a local clone (today)
+
+```sh
+git clone https://github.com/HoldenMalinchock/deno_blog.git
+cd deno_blog
+deno task dev          # demo blog from testdata/
+deno run -A ./init.ts ./my_blog
+```
+
+`init` still writes a `jsr:@hmalinchock/blog@^1.0.0` import into the new
+project. That line starts working the moment the package is published. To
+develop against this checkout in the meantime, run the demo tasks in this repo,
+or copy the `imports` map from this `deno.json` into your app and point
+`@hmalinchock/blog` at `./blog.tsx`.
+
 ## Getting started (scaffold)
+
+Once the JSR package exists:
 
 ```sh
 deno run -A jsr:@hmalinchock/blog/init ./my_blog
 cd my_blog
 deno task dev
+```
+
+From this repo, before publish:
+
+```sh
+deno run -A ./init.ts ./my_blog
 ```
 
 That creates:
@@ -56,6 +106,8 @@ That creates:
 | `deno task dev`   | Local server with live reload (`--watch` + `--dev`) |
 | `deno task serve` | Production-style serve (Deno Deploy friendly)       |
 
+Port is `settings.port` (default 8000). A CLI `--port` flag is **not** read.
+
 ## Configuration
 
 ```ts
@@ -67,6 +119,7 @@ blog({
   description: "The blog description.",
   avatar: "avatar.png",
   avatarClass: "rounded-full",
+  theme: "auto", // "light" | "dark" | "auto"
   links: [
     { title: "Email", url: "mailto:bot@deno.com" },
     { title: "GitHub", url: "https://github.com/denobot" },
@@ -75,7 +128,7 @@ blog({
   dateFormat: (date) =>
     new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(date),
   middlewares: [
-    ga("G-XXXXXXXXXX"),
+    ga("G-XXXXXXXXXX"), // GA4 Measurement ID, not a UA- property
     redirects({
       "/foo": "/my_post",
       bar: "my_post2",
@@ -84,6 +137,20 @@ blog({
   favicon: "favicon.ico",
 });
 ```
+
+### Theme
+
+| `theme`   | Behavior                                                      |
+| --------- | ------------------------------------------------------------- |
+| `"auto"`  | Follow `prefers-color-scheme`; overridable via `localStorage` |
+| `"light"` | Always light — no dark-mode script                            |
+| `"dark"`  | Always dark                                                   |
+
+### Analytics
+
+`ga()` injects the official **gtag.js** snippet for a GA4 Measurement ID
+(`G-XXXXXXXXXX`). Universal Analytics (`UA-…`) was shut down in 2023; those keys
+log a warning and are ignored.
 
 ## Custom header / footer
 
@@ -118,6 +185,15 @@ tags:
 Markdown body goes here.
 ```
 
+`publish_date` may be an unquoted YAML date (`2026-07-22`) or a quoted ISO
+string (`"2026-07-22"`). Both are honored. Missing or unparseable dates log a
+warning and sort as 1970-01-01 so the post does not float to the top of the
+index every day.
+
+Other useful fields: `pathname`, `abstract` / `summary` / `description` (used if
+`snippet` is omitted), `cover_html`, `og:image`, `tags`, `allow_iframes`,
+`disable_html_sanitization`, `render_math`.
+
 ## Hosting with Deno Deploy
 
 1. Push your project to GitHub.
@@ -133,18 +209,25 @@ Typical run permissions:
 deno run --allow-net --allow-read --allow-env main.tsx
 ```
 
+`--allow-net` is required for the server (and for gtag's browser requests, which
+do not need a Deno permission). `--allow-read` loads posts and static files.
+`--allow-env` is reserved for future host integration.
+
 ## API
 
-| Export                                 | Description                       |
-| -------------------------------------- | --------------------------------- |
-| `blog(settings?)`                      | Start the blog server             |
-| `configureBlog(url, isDev, settings?)` | Load posts and build state        |
-| `createBlogHandler(state)`             | Request handler without listening |
-| `ga(key)`                              | Google Analytics middleware       |
-| `redirects(map)`                       | Path redirect middleware          |
-| `h` / `Fragment`                       | JSX helpers for custom UI         |
+| Export                                 | Description                                     |
+| -------------------------------------- | ----------------------------------------------- |
+| `blog(settings?)`                      | Start the blog server                           |
+| `configureBlog(url, isDev, settings?)` | Load posts and build state                      |
+| `createBlogHandler(state)`             | Request handler without listening               |
+| `ga(key)`                              | GA4 gtag middleware (`G-XXXXXXXXXX`)            |
+| `redirects(map)`                       | Path redirect middleware                        |
+| `h` / `Fragment`                       | JSX helpers for custom UI                       |
+| `parsePublishDate(value, path)`        | Front-matter date parser                        |
+| `resolveColorScheme(theme)`            | Maps `theme` to `"light"` / `"dark"` / `"auto"` |
 
 ## License
 
 MIT — based on the original
-[denoland/deno_blog](https://github.com/denoland/deno_blog) library.
+[denoland/deno_blog](https://github.com/denoland/deno_blog) library by the Deno
+authors.

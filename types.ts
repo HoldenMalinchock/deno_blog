@@ -6,7 +6,15 @@
  * @module
  */
 
-import type { UnoConfig, VNode } from "./deps.ts";
+import type { UnoConfig } from "./deps.ts";
+
+/**
+ * Opaque JSX node used for custom headers, footers, sections, and link icons.
+ *
+ * Kept as `unknown` so the public API does not leak Preact's private types
+ * into JSR documentation.
+ */
+export type HtmlChild = unknown;
 
 /** Request context passed to {@linkcode BlogMiddleware}. */
 export interface BlogContext {
@@ -49,18 +57,18 @@ export interface BlogSettings {
     /** The link */
     url: string;
     /** The element to use as the icon of the link */
-    icon?: VNode;
+    icon?: HtmlChild;
     /** The link target */
     target?: "_self" | "_blank" | "_parent" | "_top";
   }[];
   /** The element to use as header */
-  header?: VNode;
+  header?: HtmlChild;
   /** Whether to show the header on post pages */
   showHeaderOnPostPage?: boolean;
   /** The element to use as section. Access to Post props. */
-  section?: (post: Post) => VNode;
+  section?: (post: Post) => HtmlChild;
   /** The element to use as footer */
-  footer?: VNode;
+  footer?: HtmlChild;
   /** Custom CSS */
   style?: string;
   /** URL to open graph image. Can be relative. */
@@ -78,7 +86,13 @@ export interface BlogSettings {
   canonicalUrl?: string;
   /** UnoCSS configuration */
   unocss?: UnoConfig;
-  /** Color scheme */
+  /**
+   * Color scheme.
+   *
+   * - `"dark"` — always dark
+   * - `"light"` — always light (no prefers-color-scheme script)
+   * - `"auto"` (default) — follow the OS, overridable via `localStorage`
+   */
   theme?: "dark" | "light" | "auto";
   /**
    * URL to favicon. Can be relative.

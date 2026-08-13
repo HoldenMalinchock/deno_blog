@@ -74,7 +74,7 @@ Deno.test({
 
 Deno.test({
   name: "known issue: quoted publish_date strings are honored",
-  ignore: true,
+  ignore: false,
   fn: async () => {
     const tmp = await Deno.makeTempDir({ prefix: "blog-date-" });
     await Deno.mkdir(join(tmp, "posts"));

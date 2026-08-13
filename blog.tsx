@@ -18,19 +18,18 @@
  * });
  * ```
  */
-/** @jsx h */
+/** @jsx jsx */
 
 import {
   callsites,
   ColorScheme,
-  createReporter,
   dirname,
   Feed,
-  Fragment,
+  Fragment as jsxFragment,
   fromFileUrl,
   frontMatter,
   gfm,
-  h,
+  h as jsx,
   html,
   type HtmlOptions,
   join,
@@ -52,10 +51,32 @@ import type {
   Post,
 } from "./types.ts";
 
-/** Re-export of the JSX `Fragment` helper used for custom headers/footers. */
-export { Fragment };
-/** Re-export of the JSX `h` factory used for custom headers/footers. */
-export { h };
+/**
+ * JSX element factory for custom headers, footers, and sections.
+ *
+ * Same runtime as Preact's `h`. The public signature is type-erased so
+ * generated JSR docs do not pull in Preact's private types.
+ */
+export function h(
+  type: string | ((props?: Record<string, unknown>) => unknown),
+  props?: Record<string, unknown> | null,
+  ...children: unknown[]
+): unknown {
+  return (jsx as (...args: unknown[]) => unknown)(
+    type,
+    props ?? null,
+    ...children,
+  );
+}
+
+/**
+ * JSX fragment helper for custom headers, footers, and sections.
+ *
+ * Public type is erased for the same reason as {@linkcode h}.
+ */
+export const Fragment = jsxFragment as unknown as (
+  props?: { children?: unknown },
+) => unknown;
 
 /** Blog configuration and runtime types. */
 export type {
@@ -64,6 +85,7 @@ export type {
   BlogSettings,
   BlogState,
   DateFormat,
+  HtmlChild,
   Post,
 } from "./types.ts";
 
@@ -116,6 +138,21 @@ function errorHandler(err: unknown) {
 }
 
 /**
+ * Resolve {@linkcode BlogSettings.theme} to the color-scheme plugin mode.
+ *
+ * `"light"` and `"dark"` are forced. Anything else, including `undefined`,
+ * is `"auto"` (system preference + `localStorage`).
+ */
+export function resolveColorScheme(
+  theme?: BlogSettings["theme"],
+): "dark" | "light" | "auto" {
+  if (theme === "dark" || theme === "light") {
+    return theme;
+  }
+  return "auto";
+}
+
+/**
  * Start the blog HTTP server.
  *
  * Reads Markdown posts from a `posts/` directory next to the caller, then
@@ -132,7 +169,7 @@ function errorHandler(err: unknown) {
  *   description: "The blog description.",
  *   avatar: "./avatar.png",
  *   middlewares: [
- *     ga("GA-ANALYTICS-KEY"),
+ *     ga("G-XXXXXXXXXX"),
  *     redirects({ "/old": "/new-post" }),
  *   ],
  * });
@@ -140,7 +177,7 @@ function errorHandler(err: unknown) {
  */
 export default async function blog(settings?: BlogSettings): Promise<void> {
   html.use(UnoCSS(settings?.unocss)); // Load custom unocss module if provided
-  html.use(ColorScheme(settings?.theme == "dark" ? "dark" : "auto"));
+  html.use(ColorScheme(resolveColorScheme(settings?.theme)));
 
   const url = callsites()[1].getFileName()!;
   const blogState = await configureBlog(url, IS_DEV, settings);
@@ -328,10 +365,7 @@ async function loadPost(postsDirectory: string, path: string) {
     title: data.get("title") ?? "Untitled",
     author: data.get("author"),
     pathname,
-    // Note: no error when publish_date is wrong or missed
-    publishDate: data.get("publish_date") instanceof Date
-      ? data.get("publish_date")!
-      : new Date(),
+    publishDate: parsePublishDate(data.get("publish_date"), path),
     snippet,
     markdown: content,
     coverHtml: data.get("cover_html"),
@@ -556,11 +590,52 @@ function serveRSS(
   });
 }
 
+/** GA4 / gtag measurement IDs (`G-`, `GT-`, `AW-`, `DC-`). */
+const GA4_MEASUREMENT_ID = /^(G|GT|AW|DC)-[A-Z0-9]+$/i;
+
 /**
- * Google Analytics middleware.
+ * Build the gtag snippet for a validated GA4 measurement ID.
  *
- * @param gaKey Measurement / tracking ID (must be non-empty)
- * @returns Middleware that records page views after the response is produced
+ * The ID is restricted to {@linkcode GA4_MEASUREMENT_ID} before interpolation.
+ */
+function gtagSnippet(measurementId: string): string {
+  return (
+    `<script async src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"></script>` +
+    `<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","${measurementId}");</script>`
+  );
+}
+
+async function injectGtag(
+  res: Response,
+  measurementId: string,
+): Promise<Response> {
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html")) {
+    return res;
+  }
+  const body = await res.text();
+  const snippet = gtagSnippet(measurementId);
+  const html = body.includes("</head>")
+    ? body.replace("</head>", `${snippet}</head>`)
+    : `${snippet}${body}`;
+  const headers = new Headers(res.headers);
+  headers.delete("content-length");
+  return new Response(html, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+  });
+}
+
+/**
+ * Google Analytics 4 middleware.
+ *
+ * Injects the official gtag.js snippet into HTML responses. Pass a GA4
+ * Measurement ID (`G-XXXXXXXXXX`). Universal Analytics (`UA-…`) IDs are
+ * rejected with a warning — UA collection shut down in 2023.
+ *
+ * @param gaKey GA4 Measurement ID (must be non-empty)
+ * @returns Middleware that adds gtag to HTML pages
  *
  * @example
  * ```ts
@@ -573,35 +648,29 @@ export function ga(gaKey: string): BlogMiddleware {
     throw new Error("GA key cannot be empty.");
   }
 
-  const gaReporter = createReporter({ id: gaKey });
+  const measurementId = gaKey.trim();
+  const isGa4 = GA4_MEASUREMENT_ID.test(measurementId);
+  if (!isGa4) {
+    console.warn(
+      `ga(): "${gaKey}" is not a GA4 Measurement ID (G-XXXXXXXXXX). ` +
+        `Universal Analytics (UA-…) was shut down in 2023 and is ignored.`,
+    );
+  }
 
   return async function (
-    request: Request,
+    _request: Request,
     ctx: BlogContext,
   ): Promise<Response> {
-    let err: undefined | Error;
-    let res: undefined | Response;
-
-    const start = performance.now();
     try {
-      res = await ctx.next() as Response;
-    } catch (e) {
-      err = e as Error;
-      console.error(e);
-      res = new Response("Internal server error", { status: 500 });
-    } finally {
-      if (gaReporter) {
-        // g_a expects the old ConnInfo shape; remoteAddr is compatible at runtime
-        gaReporter(
-          request,
-          ctx.connInfo as unknown as Parameters<typeof gaReporter>[1],
-          res!,
-          start,
-          err,
-        );
+      const res = await ctx.next();
+      if (!isGa4) {
+        return res;
       }
+      return await injectGtag(res, measurementId);
+    } catch (e) {
+      console.error(e);
+      return new Response("Internal server error", { status: 500 });
     }
-    return res;
   };
 }
 
@@ -676,6 +745,55 @@ function recordGetter(data: Record<string, unknown>) {
       return data[key] as T;
     },
   };
+}
+
+/** Stable fallback so undated posts sort to the bottom, not "today". */
+const MISSING_PUBLISH_DATE = new Date(0);
+
+/**
+ * Parse a front-matter `publish_date`.
+ *
+ * Accepts a `Date` (unquoted YAML) or an ISO / RFC 2822 string (quoted YAML).
+ * Invalid or missing values log a warning and become 1970-01-01 so the post
+ * does not jump to the top of the index every day.
+ */
+export function parsePublishDate(value: unknown, path: string): Date {
+  if (value instanceof Date) {
+    if (!Number.isNaN(value.getTime())) {
+      return value;
+    }
+    console.warn(`Invalid publish_date in ${path}: Invalid Date`);
+    return MISSING_PUBLISH_DATE;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const fromNumber = new Date(value);
+    if (!Number.isNaN(fromNumber.getTime())) {
+      return fromNumber;
+    }
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      const fromString = new Date(trimmed);
+      if (!Number.isNaN(fromString.getTime())) {
+        return fromString;
+      }
+    }
+    console.warn(
+      `Invalid publish_date in ${path}: ${JSON.stringify(value)}`,
+    );
+    return MISSING_PUBLISH_DATE;
+  }
+  if (value == null) {
+    console.warn(
+      `Missing publish_date in ${path}; sorting as 1970-01-01`,
+    );
+    return MISSING_PUBLISH_DATE;
+  }
+  console.warn(
+    `Invalid publish_date in ${path}: ${JSON.stringify(value)}`,
+  );
+  return MISSING_PUBLISH_DATE;
 }
 
 function readingTime(text: string) {

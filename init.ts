@@ -55,8 +55,8 @@ blog({
 
   // middlewares: [
 
-    // If you want to set up Google Analytics, paste your GA key here.
-    // ga("UA-XXXXXXXX-X"),
+    // If you want to set up Google Analytics 4, paste your Measurement ID here.
+    // ga("G-XXXXXXXXXX"),
 
     // If you want to provide some redirections, you can specify them here,
     // pathname specified in a key will redirect to pathname in the value.
