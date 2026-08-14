@@ -424,6 +424,44 @@ Deno.test(
   },
 );
 
+Deno.test("quoted publish_date in front matter is honored", async () => {
+  const tmp = await Deno.makeTempDir({ prefix: "blog-date-" });
+  await Deno.mkdir(join(tmp, "posts"));
+  await Deno.writeTextFile(
+    join(tmp, "posts/quoted.md"),
+    `---
+title: Quoted date
+publish_date: "2020-01-01"
+---
+hello
+`,
+  );
+  const state = await configureBlog(join(tmp, "main.ts"), false, {
+    title: "dates",
+  });
+  const handler = createBlogHandler(state);
+  const body = await (await handler(
+    new Request("https://blog.example/quoted"),
+    CONN_INFO,
+  )).text();
+  assertStringIncludes(body, `datetime="2020-01-01`);
+});
+
+Deno.test("protocol-relative redirects stay on-origin", async () => {
+  const handler = createBlogHandler({
+    ...BLOG_SETTINGS,
+    middlewares: [redirects({ "/evil": "//evil.example" })],
+  });
+  const resp = await handler(
+    new Request("https://blog.example/evil"),
+    CONN_INFO,
+  );
+  assertEquals(resp.status, 307);
+  const loc = resp.headers.get("location") ?? "";
+  assertFalse(loc.startsWith("//"));
+  assertFalse(loc.startsWith("http"));
+});
+
 Deno.test("parsePublishDate honors Date, string, and falls back to epoch", () => {
   const fromDate = parsePublishDate(new Date("2020-01-01T00:00:00.000Z"), "x");
   assertEquals(fromDate.toISOString(), "2020-01-01T00:00:00.000Z");
