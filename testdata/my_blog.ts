@@ -4,7 +4,7 @@ blog({
   author: "Dino",
   title: "My Blog",
   description: "The blog description.",
-  avatar: "https://deno-avatar.deno.dev/avatar/blog.svg",
+  avatar: "https://deno-avatar.hmalinch.deno.net/avatar/blog.svg",
   avatarClass: "rounded-full",
   links: [
     { title: "bot@deno.com", url: "mailto:bot@deno.com" },
