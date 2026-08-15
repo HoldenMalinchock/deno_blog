@@ -1,6 +1,6 @@
 {
   "name": "@hmalinchock/blog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "exports": {
     ".": "./blog.tsx",
     "./init": "./init.ts"
