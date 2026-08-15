@@ -31,66 +31,19 @@ my own writing, and I did not want it stranded on Deno 1, `deno.land/x`, and
 Universal Analytics. This fork is that library brought back to life:
 
 - Deno 2 (`Deno.serve`, JSR / npm specifiers, current `@std`)
-- Meant to publish as **`jsr:@hmalinchock/blog`**
+- Published as **`jsr:@hmalinchock/blog`**
 - Same idea as the original: one entry file, a `posts/` directory, done
 
 It remains MIT-licensed and is still based on the Deno authors' code. I am not
 replacing that history — I am keeping a tool I rely on able to run on the Deno
 that exists now.
 
-## Install
-
-### After this package is on JSR
-
-```sh
-deno add jsr:@hmalinchock/blog
-```
-
-Or pin it in `deno.json`:
-
-```json
-{
-  "imports": {
-    "@hmalinchock/blog": "jsr:@hmalinchock/blog@^1.0.0"
-  }
-}
-```
-
-The `jsr:@hmalinchock/blog` package is the intended install. It is **not on JSR
-yet** — first publish is still pending. Until that lands, use a local clone
-(below) rather than a raw GitHub URL. This library uses bare import-map
-specifiers (`@std/…`, `preact`, …), so a lone `file:` / raw URL will not resolve
-unless the consumer also has those mappings.
-
-### From a local clone (today)
-
-```sh
-git clone https://github.com/HoldenMalinchock/deno_blog.git
-cd deno_blog
-deno task dev          # demo blog from testdata/
-deno run -A ./init.ts ./my_blog
-```
-
-`init` still writes a `jsr:@hmalinchock/blog@^1.0.0` import into the new
-project. That line starts working the moment the package is published. To
-develop against this checkout in the meantime, run the demo tasks in this repo,
-or copy the `imports` map from this `deno.json` into your app and point
-`@hmalinchock/blog` at `./blog.tsx`.
-
-## Getting started (scaffold)
-
-Once the JSR package exists:
+## Getting started
 
 ```sh
 deno run -A jsr:@hmalinchock/blog/init ./my_blog
 cd my_blog
 deno task dev
-```
-
-From this repo, before publish:
-
-```sh
-deno run -A ./init.ts ./my_blog
 ```
 
 That creates:
