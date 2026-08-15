@@ -23,7 +23,7 @@
   "tasks": {
     "demo": "deno run --allow-net --allow-read --allow-env --watch testdata/my_blog.ts --dev",
     "dev": "deno run --allow-net --allow-read --allow-env --watch testdata/my_blog.ts --dev",
-    "test": "deno test --allow-read --allow-env --allow-net",
+    "test": "deno test --allow-read --allow-write --allow-env --allow-net",
     "serve": "deno run --allow-net --allow-read --allow-env testdata/my_blog.ts",
     "check": "deno check blog.tsx init.ts",
     "doc": "deno doc --lint blog.tsx init.ts",

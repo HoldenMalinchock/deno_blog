@@ -1,6 +1,8 @@
 import type { Plugin } from "../html.tsx";
 
-export default function ColorScheme(colorScheme: "dark" | "auto"): Plugin {
+export default function ColorScheme(
+  colorScheme: "dark" | "light" | "auto",
+): Plugin {
   return (ctx) => {
     if (colorScheme === "dark") {
       ctx.classes = {

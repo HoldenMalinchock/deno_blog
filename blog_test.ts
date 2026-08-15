@@ -1,7 +1,20 @@
 // Copyright 2022 the Deno authors. All rights reserved. MIT license.
 
-import { configureBlog, createBlogHandler, redirects } from "./blog.tsx";
-import { assert, assertEquals, assertStringIncludes } from "@std/assert";
+import {
+  configureBlog,
+  createBlogHandler,
+  ga,
+  parsePublishDate,
+  redirects,
+  resolveColorScheme,
+} from "./blog.tsx";
+import {
+  assert,
+  assertEquals,
+  assertFalse,
+  assertStringIncludes,
+  assertThrows,
+} from "@std/assert";
 import { fromFileUrl, join } from "@std/path";
 
 const BLOG_URL = new URL("./testdata/main.js", import.meta.url).href;
@@ -357,6 +370,23 @@ Deno.test("Plaintext response", async () => {
   assert(body.startsWith("It was popularised in the 1960s"));
 });
 
+Deno.test("missing post is 404", async () => {
+  const resp = await testHandler(
+    new Request("https://blog.deno.dev/does-not-exist"),
+  );
+  assertEquals(resp.status, 404);
+  await resp.text();
+});
+
+Deno.test("posts/ fifth (math)", async () => {
+  const resp = await testHandler(new Request("https://blog.deno.dev/fifth"));
+  assertEquals(resp.status, 200);
+  const body = await resp.text();
+  assertStringIncludes(body, `Fifth post`);
+  assertStringIncludes(body, `katex`);
+  assertStringIncludes(body, `class="katex"`);
+});
+
 Deno.test(
   "custom root directory",
   async () => {
@@ -393,3 +423,143 @@ Deno.test(
     );
   },
 );
+
+Deno.test("quoted publish_date in front matter is honored", async () => {
+  const tmp = await Deno.makeTempDir({ prefix: "blog-date-" });
+  await Deno.mkdir(join(tmp, "posts"));
+  await Deno.writeTextFile(
+    join(tmp, "posts/quoted.md"),
+    `---
+title: Quoted date
+publish_date: "2020-01-01"
+---
+hello
+`,
+  );
+  const state = await configureBlog(join(tmp, "main.ts"), false, {
+    title: "dates",
+  });
+  const handler = createBlogHandler(state);
+  const body = await (await handler(
+    new Request("https://blog.example/quoted"),
+    CONN_INFO,
+  )).text();
+  assertStringIncludes(body, `datetime="2020-01-01`);
+});
+
+Deno.test("protocol-relative redirects stay on-origin", async () => {
+  const handler = createBlogHandler({
+    ...BLOG_SETTINGS,
+    middlewares: [redirects({ "/evil": "//evil.example" })],
+  });
+  const resp = await handler(
+    new Request("https://blog.example/evil"),
+    CONN_INFO,
+  );
+  assertEquals(resp.status, 307);
+  const loc = resp.headers.get("location") ?? "";
+  assertFalse(loc.startsWith("//"));
+  assertFalse(loc.startsWith("http"));
+});
+
+Deno.test("parsePublishDate honors Date, string, and falls back to epoch", () => {
+  const fromDate = parsePublishDate(new Date("2020-01-01T00:00:00.000Z"), "x");
+  assertEquals(fromDate.toISOString(), "2020-01-01T00:00:00.000Z");
+
+  const fromQuoted = parsePublishDate("2020-01-01", "quoted.md");
+  assertEquals(fromQuoted.toISOString().startsWith("2020-01-01"), true);
+
+  const missing = parsePublishDate(undefined, "nodate.md");
+  assertEquals(missing.getTime(), 0);
+
+  const invalid = parsePublishDate("not-a-date", "bad.md");
+  assertEquals(invalid.getTime(), 0);
+
+  const invalidDateObj = parsePublishDate(new Date(Number.NaN), "nan.md");
+  assertEquals(invalidDateObj.getTime(), 0);
+});
+
+Deno.test("resolveColorScheme honors light, dark, and auto", () => {
+  assertEquals(resolveColorScheme("light"), "light");
+  assertEquals(resolveColorScheme("dark"), "dark");
+  assertEquals(resolveColorScheme("auto"), "auto");
+  assertEquals(resolveColorScheme(undefined), "auto");
+});
+
+Deno.test("ga injects gtag.js for GA4 measurement ids", async () => {
+  const handler = createBlogHandler({
+    ...BLOG_SETTINGS,
+    middlewares: [ga("G-TEST1234")],
+  });
+  const resp = await handler(
+    new Request("https://blog.deno.dev"),
+    CONN_INFO,
+  );
+  assertEquals(resp.status, 200);
+  const body = await resp.text();
+  assertStringIncludes(
+    body,
+    "https://www.googletagmanager.com/gtag/js?id=G-TEST1234",
+  );
+  assertStringIncludes(body, 'gtag("config","G-TEST1234")');
+});
+
+Deno.test("ga does not inject gtag into non-HTML responses", async () => {
+  const handler = createBlogHandler({
+    ...BLOG_SETTINGS,
+    middlewares: [ga("G-TEST1234")],
+  });
+  const resp = await handler(
+    new Request("https://blog.deno.dev/first", {
+      headers: { Accept: "text/plain" },
+    }),
+    CONN_INFO,
+  );
+  const body = await resp.text();
+  assertFalse(body.includes("googletagmanager.com"));
+});
+
+Deno.test("ga ignores Universal Analytics ids", async () => {
+  const handler = createBlogHandler({
+    ...BLOG_SETTINGS,
+    middlewares: [ga("UA-123456-1")],
+  });
+  const resp = await handler(
+    new Request("https://blog.deno.dev"),
+    CONN_INFO,
+  );
+  const body = await resp.text();
+  assertFalse(body.includes("googletagmanager.com"));
+});
+
+Deno.test("ga rejects an empty key", () => {
+  assertThrows(() => ga(""), Error, "GA key cannot be empty.");
+});
+
+Deno.test("ColorScheme light does not inject the auto dark-mode script", async () => {
+  const { default: ColorScheme } = await import(
+    "./vendor/htm/plugins/color-scheme.ts"
+  );
+  const emptyCtx = () => ({
+    styles: [] as string[],
+    scripts: [] as string[],
+    classes: {} as { html?: string[] },
+    body: "",
+    status: 200,
+    headers: new Headers(),
+  });
+  const light = emptyCtx();
+  await ColorScheme("light")(light);
+  assertEquals(light.scripts.length, 0);
+  assertFalse((light.classes.html ?? []).includes("dark"));
+
+  const auto = emptyCtx();
+  await ColorScheme("auto")(auto);
+  assert(auto.scripts.length > 0);
+  assertStringIncludes(String(auto.scripts[0]), "setColorScheme");
+
+  const dark = emptyCtx();
+  await ColorScheme("dark")(dark);
+  assertEquals(dark.classes.html?.includes("dark"), true);
+  assertEquals(dark.scripts.length, 0);
+});
